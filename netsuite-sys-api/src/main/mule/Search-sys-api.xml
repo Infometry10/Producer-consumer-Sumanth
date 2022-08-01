@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:netsuite="http://www.mulesoft.org/schema/mule/netsuite" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/netsuite http://www.mulesoft.org/schema/mule/netsuite/current/mule-netsuite.xsd">
+	<flow name="Search-sys-apiFlow" doc:id="9e706db2-e23d-4a6d-8154-961d75e31f7c" >
+		<ee:transform doc:name="input" doc:id="34308f3f-f1cf-4584-b6b1-b1cbd3579a9e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns ns0  urn:messages_2020_2.platform.webservices.netsuite.com
+ns ns01 urn:common_2020_2.platform.webservices.netsuite.com
+ns ns02 urn:core_2020_2.platform.webservices.netsuite.com
+ns xsi http://www.w3.org/2001/XMLSchema-instance
+---
+{
+	
+	ns0#search: {
+		ns0#searchRecord @("xmlns:ns01": ns01, xsi#"type": "ns01:" ++ attributes.queryParams.SearchType as String): {
+			ns01#dateCreated @(operator: attributes.queryParams.Operator): {
+				ns02#searchValue: attributes.queryParams.Time
+			}
+		}
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<netsuite:search doc:name="Search" doc:id="d81d67cc-0ec6-4c96-ae2d-acdf1beb0840" config-ref="NetSuite_Config" key="#[attributes.queryParams.SearchType]"/>
+		<ee:transform doc:name="to json" doc:id="0208c434-3aeb-4dcc-a15f-0d81f72c5f60">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

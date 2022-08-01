@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="Upsert-sys-apiFlow" doc:id="e4c1bdf9-338c-412b-bc5b-600d02f048fc" >
+		<ee:transform doc:name="upsert input" doc:id="aa057d8d-eb29-433b-ae1d-352dc1c360eb">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:upsert objectType="#[attributes.queryParams.ObjectType]" externalIdFieldName="#[attributes.queryParams.ExternalID]" doc:name="Upsert" doc:id="2e304390-3c36-49e9-9b01-29c7a21bd62d" config-ref="Salesforce_Config" />
+		<ee:transform doc:name="to json" doc:id="3aa69154-9532-4786-807a-eb2f7ceb4a50">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="payload" doc:id="522632f8-e1e7-4994-ba7c-f3eae34164d4" message="#[payload]" />
+	</flow>
+</mule>

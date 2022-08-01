@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:ibm-mq="http://www.mulesoft.org/schema/mule/ibm-mq"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/ibm-mq http://www.mulesoft.org/schema/mule/ibm-mq/current/mule-ibm-mq.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="netsuite-opportunity-prc-apiFlow" doc:id="45b98aab-50d9-430a-822e-8deabf6ecd46" >
+		<http:listener doc:name="/netsuite/prc" doc:id="fada98ed-6604-486d-a8c4-8a0186690f4a" path="/netsuite/prc" config-ref="HTTP_Listener_config"/>
+		<os:retrieve doc:id="798aa052-d7d3-4080-97bf-e0784bea26ce" key="ExecTime" objectStore="Object_store" target="LastExecTime" doc:name="ExecTime">
+			<os:default-value><![CDATA[#["2021-07-21T07:45:12.150406Z" as DateTime as String{format:"yyyy-MM-dd'T'hh:mm:ss.SSS'-07:00'"}]]]></os:default-value>
+		</os:retrieve>
+		<set-variable value="now() as DateTime as String{format:&quot;yyyy-MM-dd'T'hh:mm:ss.SSS'-07:00'&quot;}" doc:name="currentExecTime" doc:id="8078c760-b4bc-4433-8363-075dbe1fee11" variableName="currentExecTime"/>
+		<http:request method="GET" doc:name="netsuite system api" doc:id="93eee05b-0582-42ef-985d-dd08f69f072e" config-ref="netsuite_sys_api" path="/netsuite/get">
+			<http:headers ><![CDATA[#[output application/json
+---
+{
+	client_secret :  Mule::p('secure::salesforce.sys.api.client_secret'),
+	client_id : Mule::p('secure::salesforce.sys.api.client_id')
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"Operator" : "after",
+	"Time" : vars.LastExecTime,
+	"SearchType" : "TransactionSearchBasic"
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="2363f452-78be-48c7-a073-0b4a3173a40d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger message" doc:id="4cbb5041-1b3d-4f32-8a93-67f47a989419" message='Got Response from Netsuite Sys API'/>
+		<foreach doc:name="For Each" doc:id="0408d4a3-6362-45c4-b6d2-4967269ddc75" collection="#[payload]">
+			<ibm-mq:publish doc:name="Publish" doc:id="c9c1f5d5-49b8-47c1-8af1-469124404634" config-ref="IBM_MQ_Config" destination="#[attributes.queryParams.Q]" />
+		</foreach>
+		<os:store doc:id="8f0654c2-efba-4839-ab00-6e14c707e155" key="ExecTime" doc:name="ExecTime" >
+			<os:value ><![CDATA[#[vars.currentExecTime]]]></os:value>
+		</os:store>
+	</flow>
+</mule>

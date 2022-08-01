@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:ibm-mq="http://www.mulesoft.org/schema/mule/ibm-mq"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ibm-mq http://www.mulesoft.org/schema/mule/ibm-mq/current/mule-ibm-mq.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<flow name="salesforce-opportunity-prc-apiFlow" doc:id="fa60be46-ea31-4a37-b252-70e66bbdd974" initialState="started">
+		<ibm-mq:listener doc:name="On New Message" doc:id="66f86b11-f6e3-4df3-90e6-c4cfd3fbc3a9" config-ref="IBM_MQ_Config" destination="${secure::ibm.queue}" ackMode="MANUAL">
+			<ibm-mq:consumer-type >
+				<ibm-mq:queue-consumer />
+			</ibm-mq:consumer-type>
+		</ibm-mq:listener>
+		<ee:transform doc:name="Transform Message" doc:id="7aded5cc-4bb0-4dce-93f5-5f7a7bdc5004" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[payload]]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="vars.consumedData" ><![CDATA[payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Mapping" doc:id="4331805c-e9b8-4825-8dea-6d9734d27886" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.record map {
+	Name: $.customForm.name,
+	Entity_Name__c: $.entity.name,
+	transactionID__c: $.tranId,
+	SalesRep__c: $.salesRep,
+	Email__c: $.email,
+	billingstreet__c: $.billingAddress.addr1,
+	billingcity__c: $.billingAddress.city,
+	billingstate__c: $.billingAddress.state,
+	shippingstreet__c: $.shippingAddress.addr1,
+	shippingcity__c: $.shippingAddress.city,
+	shippingstate__c: $.shippingAddress.state,
+	SubTotal__c: $.subTotal,
+	DiscountTotal__c: $.discountTotal,
+	Total__c: $.total,
+	CreatedDate__c: $.createdDate as Date
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Add to Salesforce" doc:id="c8fd6a30-b805-4780-af99-cb260bf9c0d5" config-ref="salesforce_system_api" path="/salesforce/upsert" >
+			<http:headers ><![CDATA[#[output application/json
+---
+{
+	client_secret :  Mule::p('secure::salesforce.sys.api.client_secret'),
+	client_id : Mule::p('secure::salesforce.sys.api.client_id')
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"ExternalID" : "transactionID__c",
+	"ObjectType" : "SalesOrder__c"
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="errorObject" doc:id="a674918f-c1db-4f72-8e23-f3d3135b0a7e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="errorObject"><![CDATA[%dw 2.0
+output application/json
+var count = 0
+var s = payload.items map  (if ($.successful == false) 
+{ 
+    "id": $.id,
+    "exception" : true,
+    "statusCode" : $.statusCode,
+    "ErrorDescription" : $.payload.errors.message[0],
+    "Successful" : $.successful
+} else null
+)
+---
+s filter ((item, index) -> item !=null)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="if error occurs" doc:id="39ec32e7-ea10-4bad-aa35-e6b2ce4540a1" >
+			<when expression="#[!(isEmpty(vars.errorObject))]">
+				<ee:transform doc:name="errorObject as payload" doc:id="17977ac2-561c-417c-9eb1-a22f82529719" >
+					<ee:message >
+						
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.errorObject]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+					</ee:variables>
+				</ee:transform>
+				<ee:transform doc:name="Transform Message" doc:id="e73b01fd-1031-4f71-a417-0cbe58dcb50e">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/xml writeDeclaration=false
+---
+html:{
+    "style": "\ntable, th, td {\n  border: 0.5px solid black;\n  border-collapse: collapse;\n}\n\ntr:nth-child(even) {\n  background-color: rgba(150, 212, 212, 0.4);\n}\n\ntd{text-align: center;}",
+    body : {
+    table @(style: "width:100%"):{
+        tr: payload[0] mapObject (value,key,index) ->   {"th" : key}, 
+        tr: payload map( $ mapObject (value,key,index) ->   {"td" : value} )
+        }
+    }
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<flow-ref doc:name="Error_Flow" doc:id="b407810f-0266-4c16-8c53-c4c26d481920" name="Error_Flow"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="if there is no error" doc:id="9cf0f709-e39b-4218-8a6c-86a3b972427a" message='#["There are no errors"]' />
+			</otherwise>
+		</choice>
+		<ibm-mq:ack doc:name="Ack" doc:id="fd796aef-b905-400d-a889-d392bcc91839" ackId="#[attributes.ackId]" />
+	</flow>
+</mule>

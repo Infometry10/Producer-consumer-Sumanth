@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ibm-mq="http://www.mulesoft.org/schema/mule/ibm-mq"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/ibm-mq http://www.mulesoft.org/schema/mule/ibm-mq/current/mule-ibm-mq.xsd">
+	<error-handler name="error-handlerError_Handler" doc:id="b82574c3-6a01-485b-8695-cdadc6876227" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8442c53e-9950-4c91-bfe7-bddf9798b8e5" type="HTTP:BAD_REQUEST">
+			<ee:transform doc:name="Transform Message" doc:id="146d6e0b-98a3-42ee-9b1e-1c642c577b6c" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorDescription:error.description,
+	errorDetailedDesc : error.detailedDescription,
+	errorType:error.errorType.identifier
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[400]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<ee:transform doc:name="to html" doc:id="04c68fed-e2d4-48e5-b8ce-2c128696e3f3" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml writeDeclaration=false
+---
+html:{
+    "style": "\ntable, th, td {\n  border: 0.5px solid black;\n  border-collapse: collapse;\n}\n\ntr:nth-child(even) {\n  background-color: rgba(150, 212, 212, 0.4);\n}\n\ntd{text-align: center;}",
+    body : {
+    table @(style: "width:100%"):{
+        tr: payload mapObject (value,key,index) ->   {"th" : key}, 
+        tr: payload map( $ mapObject (value,key,index) ->   {"td" : value} )
+        }
+    }
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<flow-ref doc:name="Error_Flow" doc:id="e6e14161-9597-43fb-aac8-76b79d4880e3" name="Error_Flow"/>
+		
+</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6b18ca5c-7896-4b8c-8ec5-8312dccd39b6" type=" HTTP:INTERNAL_SERVER_ERROR">
+			<flow-ref doc:name="Reprocessing_Publish_Flow" doc:id="c77bf4b2-04e1-4730-b135-77606f0cadcc" name="Reprocessing_Publish_Flow"/>
+			<ee:transform doc:name="error details" doc:id="2730dea9-67e2-4167-8f7c-6c51d9d9b064" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorDescription:error.description,
+	errorDetailedDesc : error.detailedDescription,
+	errorType:error.errorType.identifier
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<ee:transform doc:name="to html" doc:id="c61c095d-507f-4f00-b075-7088d1078035" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml writeDeclaration=false
+---
+html:{
+    "style": "\ntable, th, td {\n  border: 0.5px solid black;\n  border-collapse: collapse;\n}\n\ntr:nth-child(even) {\n  background-color: rgba(150, 212, 212, 0.4);\n}\n\ntd{text-align: center;}",
+    body : {
+    table @(style: "width:100%"):{
+        tr: payload mapObject (value,key,index) ->   {"th" : key}, 
+        tr: payload map( $ mapObject (value,key,index) ->   {"td" : value} )
+        }
+    }
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<flow-ref doc:name="Error_Flow" doc:id="f67ea0a0-f7f8-4aa4-b5e8-dc6f952f3f38" name="Error_Flow"/>
+		
+</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2f8e5c51-5f89-40d8-96e9-9cab9f9f79cb" type="HTTP:NOT_FOUND">
+			<ee:transform doc:name="error details" doc:id="650a72d1-8f8f-4fdb-bbe5-e58556a37dfa" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorDescription:error.description,
+	errorDetailedDesc : error.detailedDescription,
+	errorType:error.errorType
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[404]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<ee:transform doc:name="to html" doc:id="9036da43-25b0-4811-9a7f-0c7b96bcda1f" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml writeDeclaration=false
+---
+html:{
+    "style": "\ntable, th, td {\n  border: 0.5px solid black;\n  border-collapse: collapse;\n}\n\ntr:nth-child(even) {\n  background-color: rgba(150, 212, 212, 0.4);\n}\n\ntd{text-align: center;}",
+    body : {
+    table @(style: "width:100%"):{
+        tr: payload mapObject (value,key,index) ->   {"th" : key}, 
+        tr: payload map( $ mapObject (value,key,index) ->   {"td" : value} )
+        }
+    }
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<flow-ref doc:name="Error_Flow" doc:id="22b4b023-c5cf-4ba9-9f70-340b4b14b458" name="Error_Flow"/>
+		
+</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="185704cd-e42a-4707-9150-1456494c3d74" type="HTTP:METHOD_NOT_ALLOWED">
+			<ee:transform doc:name="error details" doc:id="5518e688-98fc-46b6-b1a4-b50b6025b3db" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorDescription:error.description,
+	errorDetailedDesc : error.detailedDescription,
+	errorType:error.errorType
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[405]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<ee:transform doc:name="to html" doc:id="f38f770e-ecfa-4435-b74d-397dea86fef4" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml writeDeclaration=false
+---
+html:{
+    "style": "\ntable, th, td {\n  border: 0.5px solid black;\n  border-collapse: collapse;\n}\n\ntr:nth-child(even) {\n  background-color: rgba(150, 212, 212, 0.4);\n}\n\ntd{text-align: center;}",
+    body : {
+    table @(style: "width:100%"):{
+        tr: payload mapObject (value,key,index) ->   {"th" : key}, 
+        tr: payload map( $ mapObject (value,key,index) ->   {"td" : value} )
+        }
+    }
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<flow-ref doc:name="Error_Flow" doc:id="29556709-21f6-4912-8a38-5c83c60af642" name="Error_Flow"/>
+		
+</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d1c239b3-ebae-4276-bd3d-2ac00a72e5fc" type="HTTP:FORBIDDEN">
+			<ee:transform doc:name="error details" doc:id="c9577997-aebd-46bb-a5ed-478506eb6770" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorDescription:error.description,
+	errorDetailedDesc : error.detailedDescription,
+	errorType:error.errorType
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[403]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<ee:transform doc:name="to html" doc:id="13f9bb20-a933-41a8-9b55-3b4096068de2" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml writeDeclaration=false
+---
+html:{
+    "style": "\ntable, th, td {\n  border: 0.5px solid black;\n  border-collapse: collapse;\n}\n\ntr:nth-child(even) {\n  background-color: rgba(150, 212, 212, 0.4);\n}\n\ntd{text-align: center;}",
+    body : {
+    table @(style: "width:100%"):{
+        tr: payload mapObject (value,key,index) ->   {"th" : key}, 
+        tr: payload map( $ mapObject (value,key,index) ->   {"td" : value} )
+        }
+    }
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<flow-ref doc:name="Error_Flow" doc:id="37ea8a5c-ea2f-4fa0-8030-0e01f09eb654" name="Error_Flow"/>
+		
+</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5392e9bb-2b51-4024-978c-131137c44e63" type="HTTP:CONNECTIVITY">
+			<flow-ref doc:name="Reprocessing_Publish_Flow" doc:id="414be2b4-30fd-40d4-adc5-2fcce57e4bec" name="Reprocessing_Publish_Flow"/>
+			<ee:transform doc:name="error details" doc:id="86f4550f-56a8-477a-b15c-8d0f3a4b1eec" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorDescription:error.description,
+	errorDetailedDesc : error.detailedDescription,
+	errorType:error.errorType
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<ee:transform doc:name="to html" doc:id="c55151ea-35a1-4dcb-bfac-b2a0ec0d9570" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml writeDeclaration=false
+---
+html:{
+    "style": "\ntable, th, td {\n  border: 0.5px solid black;\n  border-collapse: collapse;\n}\n\ntr:nth-child(even) {\n  background-color: rgba(150, 212, 212, 0.4);\n}\n\ntd{text-align: center;}",
+    body : {
+    table @(style: "width:100%"):{
+        tr: payload mapObject (value,key,index) ->   {"th" : key}, 
+        tr: payload map( $ mapObject (value,key,index) ->   {"td" : value} )
+        }
+    }
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<flow-ref doc:name="Error_Flow" doc:id="a0392347-ab18-47c9-8168-7bee1e3bb978" name="Error_Flow" />
+		
+</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="56e78a3f-2d4f-486e-9f72-84639b9d7fdc" type="ANY">
+			<ee:transform doc:name="error details" doc:id="f8d61e0b-dfd9-4d69-86f2-852e3d8575e9" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorDescription:error.description,
+	errorDetailedDesc : error.detailedDescription,
+	errorType:error.errorType
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<ee:transform doc:name="to html" doc:id="8dd608a0-3cad-401c-8a62-fb2fb2284aac" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml writeDeclaration=false
+---
+html:{
+    "style": "\ntable, th, td {\n  border: 0.5px solid black;\n  border-collapse: collapse;\n}\n\ntr:nth-child(even) {\n  background-color: rgba(150, 212, 212, 0.4);\n}\n\ntd{text-align: center;}",
+    body : {
+    table @(style: "width:100%"):{
+        tr: payload mapObject (value,key,index) ->   {"th" : key}, 
+        tr: payload map( $ mapObject (value,key,index) ->   {"td" : value} )
+        }
+    }
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<flow-ref doc:name="Error_Flow" doc:id="edf19817-12d7-447b-bb67-f37ef814661e" name="Error_Flow"/>
+		</on-error-propagate>
+	</error-handler>
+	<sub-flow name="Reprocessing_Publish_Flow" doc:id="59289824-267e-4379-b40f-0805c681c0bb" >
+		<ibm-mq:publish doc:name="Publish" doc:id="74dfd543-8178-4f61-a870-ff7e97b5c217" config-ref="IBM_MQ_Config" destination="deadLetterQueue">
+			<ibm-mq:message >
+				<ibm-mq:body ><![CDATA[#[vars.consumedData]]]></ibm-mq:body>
+			</ibm-mq:message>
+		</ibm-mq:publish>
+	</sub-flow>
+	<sub-flow name="Error_Flow" doc:id="dd445eba-437a-4f34-bbf0-a352856cbb70" >
+		<email:send doc:name="send" doc:id="58a486d0-b6f0-4e46-b4f9-8f6c967f9994" config-ref="Email_SMTP" fromAddress="${secure::smtp.fromAddress}" subject="errors" >
+			<email:to-addresses >
+				<email:to-address value="${secure::smtp.toAddress}" />
+			</email:to-addresses>
+			<email:body contentType="text/html" />
+		</email:send>
+	</sub-flow>
+</mule>

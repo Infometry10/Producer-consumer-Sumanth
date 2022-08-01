@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ibm-mq="http://www.mulesoft.org/schema/mule/ibm-mq" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ibm-mq http://www.mulesoft.org/schema/mule/ibm-mq/current/mule-ibm-mq.xsd">
+	<flow name="reprocessingFlow" doc:id="900b0944-bfd7-4bd3-b57c-75ee42956325" >
+		<http:listener doc:name="/reprocess" doc:id="735502f6-d7da-4ca6-914e-9f1087dd2129" config-ref="HTTP_Listener_config" path="/reprocess"/>
+		<ibm-mq:consume doc:name="Consume" doc:id="9dae40af-ec5c-4171-85be-d1df7b6b1930" config-ref="IBM_MQ_Config" destination="deadLetterQueue">
+			<ibm-mq:consumer-type >
+				<ibm-mq:queue-consumer />
+			</ibm-mq:consumer-type>
+		</ibm-mq:consume>
+		<ibm-mq:publish doc:name="Publish" doc:id="78340448-0f53-4142-987e-4ea5a6523dd2" config-ref="IBM_MQ_Config" destination="Queue"/>
+	</flow>
+</mule>

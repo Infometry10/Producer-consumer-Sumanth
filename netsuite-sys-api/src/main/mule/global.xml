@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:netsuite="http://www.mulesoft.org/schema/mule/netsuite" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/netsuite http://www.mulesoft.org/schema/mule/netsuite/current/mule-netsuite.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="8f329469-ee3a-41a8-9671-cf415445a28c" >
+		<http:listener-connection host="0.0.0.0" port="${secure::http.port}" />
+	</http:listener-config>
+	<netsuite:config name="NetSuite_Config" doc:name="NetSuite Config" doc:id="6e7b405d-2777-44e7-90cb-29ba1f612155" >
+		<netsuite:token-based-authentication-connection consumerKey="${secure::Netsuite.CONSUMERKEY}" consumerSecret="${secure::Netsuite.CONSUMERSECRET}" tokenId="${secure::Netsuite.TOKENID}" tokenSecret="${secure::Netsuite.TOKENSECRET}" account="${secure::Netsuite.ACCOUNTID}" wsdlVersion="V2020_2"/>
+	</netsuite:config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="a525b5d4-dc59-4a96-872f-3363b8f9c4ff" >
+		<salesforce:basic-connection username="sumanthdasari208@gmail.com" password="Whatever@123" securityToken="1dssbBIL8HBd6itpQeHIgGZ8" />
+	</salesforce:sfdc-config>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="1e90ea98-5052-4cde-bacb-86a649d716ce" file="netsuite-sys-api-${env}.yaml" key="${enc.key}" />
+	<configuration doc:name="Configuration" doc:id="c929c2f7-3058-4c99-8b6c-8d96c007b7dd" defaultErrorHandler-ref="global-error-handler" /> 
+	</mule>

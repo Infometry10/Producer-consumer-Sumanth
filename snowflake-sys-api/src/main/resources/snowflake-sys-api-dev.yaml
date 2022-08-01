@@ -1,0 +1,10 @@
+http:
+  port: "8081"
+  
+snowflake:
+  accountName : "![Zne652v9oziHMW9L9GTWNoj4IXgKdCIxuRy0YRXumZE=]"
+  warehouse : "COMPUTE_WH" 
+  database : "SALESORDER"
+  schema : "PUBLIC"
+  user : "sumanthd"
+  password : "![ch4sM/Ln5BJIlce81qlcqQ==]"

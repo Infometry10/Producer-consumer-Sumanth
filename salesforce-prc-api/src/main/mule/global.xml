@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:ibm-mq="http://www.mulesoft.org/schema/mule/ibm-mq"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ibm-mq http://www.mulesoft.org/schema/mule/ibm-mq/current/mule-ibm-mq.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="ba74ec50-f33e-4e49-a685-d95b447bf7d7" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<http:request-config name="salesforce_system_api" doc:name="HTTP Request configuration" doc:id="04535b1e-b59b-475f-9acc-87067512adab" basePath="/${secure::salesforce.sys.api.basePath}">
+		<http:request-connection host="${secure::salesforce.sys.api.host}" port="${secure::salesforce.sys.api.port}" />
+	</http:request-config>
+	<ibm-mq:config name="IBM_MQ_Config" doc:name="IBM MQ Config" doc:id="44252af6-5a76-4b6c-a28c-2b2badcfd0d6" >
+		<ibm-mq:connection >
+			<ibm-mq:connection-mode >
+				<ibm-mq:client host="${secure::ibm.host}" port="${secure::ibm.port}" queueManager="${secure::ibm.queueManager}" channel="${secure::ibm.channel}" />
+			</ibm-mq:connection-mode>
+		</ibm-mq:connection>
+	</ibm-mq:config>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="018cda02-469f-4c60-b73d-38a814fc43d6" file="salesforce-prc-api-${env}.yaml" key="${enc.key}" />
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="fe7ade4e-290f-4f2e-bc6b-de7ace0ade20" >
+		<email:smtp-connection host="${secure::smtp.host}" port="${secure::smtp.port}" user="${secure::smtp.fromAddress}" password="${secure::smtp.password}" >
+			<email:properties >
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+	<configuration doc:name="Configuration" doc:id="de963abd-6826-4a2e-9e4e-1f07ef25f7d6" defaultErrorHandler-ref="error-handlerError_Handler" />
+</mule>

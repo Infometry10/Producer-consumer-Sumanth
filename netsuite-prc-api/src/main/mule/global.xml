@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:ibm-mq="http://www.mulesoft.org/schema/mule/ibm-mq"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/ibm-mq http://www.mulesoft.org/schema/mule/ibm-mq/current/mule-ibm-mq.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="0245bdc5-27d0-4830-80bb-45aa92f26227" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="netsuite_sys_api" doc:name="HTTP Request configuration" doc:id="6cd9002a-7c4e-4e3b-ad5c-cdc797d10dc3" basePath="/${secure::netsuite.sys.api.basePath}">
+		<http:request-connection host="${secure::netsuite.sys.api.host}" port="${secure::netsuite.sys.api.port}" />
+	</http:request-config>
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="26aa3ba1-25c4-4790-b5fa-32808979ce6d" maxEntries="1000" entryTtl="15" entryTtlUnit="MINUTES" expirationInterval="20"/>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="3c69440d-1926-42b6-b384-e43052718e39" file="netsuite-prc-api-${env}.yaml" key="${enc.key}" />
+	<ibm-mq:config name="IBM_MQ_Config" doc:name="IBM MQ Config" doc:id="f7d3b9ea-fa8f-4363-a874-576da7476941" >
+		<ibm-mq:connection >
+			<ibm-mq:connection-mode >
+				<ibm-mq:client host="${secure::ibm.host}" queueManager="${secure::ibm.queueManager}" channel="${secure::ibm.channel}" port="${secure::ibm.port}"/>
+			</ibm-mq:connection-mode>
+		</ibm-mq:connection>
+	</ibm-mq:config>
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="47bfdf29-0cd0-45b2-8920-07dff0b8a761" >
+		<email:smtp-connection host="${secure::smtp.host}" port="${secure::smtp.port}" user="${secure::smtp.fromAddress}" password="${secure::smtp.password}" >
+			<email:properties >
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+	<configuration doc:name="Configuration" doc:id="3139d81a-6816-4c96-a3ab-d17391e3691c" defaultErrorHandler-ref="Error_Handler" />
+</mule>

@@ -1,31 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:snowflake="http://www.mulesoft.org/schema/mule/snowflake"
-	xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:snowflake="http://www.mulesoft.org/schema/mule/snowflake"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/snowflake http://www.mulesoft.org/schema/mule/snowflake/current/mule-snowflake.xsd
-http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<flow name="update-sys-apiFlow" doc:id="6608e242-2d3a-4f22-ad61-9cc9447f8088" >
 		<http:listener doc:name="/update" doc:id="472bd0f4-9b1b-4939-9b44-8cc4cdde2585" config-ref="HTTP_Listener_config" path="/update"/>
 		<snowflake:update doc:name="Update" doc:id="48b3a5ca-0cd7-4a13-80fe-f029e67c1dbf" config-ref="Snowflake_Config">
-			<snowflake:sql ><![CDATA[update SALESORDER set NAME=:NAME,ENTITYNAME=:ENTITYNAME,
-TRANSACTIONID = :TRANSACTIONID, SALESREP = :SALESREP ,
-EMAIL=:EMAIL,BILLINGSTREET=:BILLINGSTREET,
-BILLINGCITY=:BILLINGCITY,BILLINGSTATE=:BILLINGSTATE,SHIPPINGSTREET=:SHIPPINGSTREET,
-SHIPPINGCITY=:SHIPPINGCITY,SHIPPINGSTATE=:SHIPPINGSTATE]]></snowflake:sql>
-			<snowflake:input-parameters ><![CDATA[#[{
-	NAME : payload.name,
-	ENTITYNAME : payload.entity.name,
-	TRANSACTIONID : "",
-	SALESREP : "",
-	EMAIL : "",
-	BILLINGSTREET : "",
-	BILLINGCITY : "",
-	BILLINGSTATE : "",
-	SHIPPINGSTREET : "",
-	SHIPPINGCITY : "",
-	SHIPPINGSTATE : ""
-}]]]></snowflake:input-parameters>
+			<snowflake:sql ><![CDATA[#[payload.query]]]></snowflake:sql>
+			<snowflake:input-parameters ><![CDATA[#[payload.mapping]]]></snowflake:input-parameters>
 		</snowflake:update>
+		<ee:transform doc:name="Transform Message" doc:id="8e369c3f-37d4-47a8-af39-0a6bb548c067" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
 	</flow>
 </mule>

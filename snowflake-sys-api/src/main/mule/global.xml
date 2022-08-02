@@ -13,4 +13,5 @@ http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/sc
 		<snowflake:snowflake-connection accountName="${secure::snowflake.accountName}" warehouse="${secure::snowflake.warehouse}" database="${secure::snowflake.database}" schema="${secure::snowflake.schema}" user="${secure::snowflake.user}" password="${secure::snowflake.password}" />
 	</snowflake:snowflake-config>
 	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="193feaf6-71bf-4ea5-9324-51c6afb5f598" file="snowflake-sys-api-${env}.yaml" key="${enc.key}" />
+	<configuration doc:name="Configuration" doc:id="ed42097b-f86e-405c-8045-844e10fdfdce" defaultErrorHandler-ref="error-handlerError_Handler" />
 </mule>

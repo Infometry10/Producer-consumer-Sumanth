@@ -1,14 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:snowflake="http://www.mulesoft.org/schema/mule/snowflake"
-	xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:snowflake="http://www.mulesoft.org/schema/mule/snowflake"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/snowflake http://www.mulesoft.org/schema/mule/snowflake/current/mule-snowflake.xsd
-http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<flow name="get-sys-apiFlow" doc:id="a4d35414-6c81-4e54-b63a-b6a181dfe507" >
-		<http:listener doc:name="/get" doc:id="6fb9b431-4191-43f3-a9c8-bd336dc99253" config-ref="HTTP_Listener_config" path="/get"/>
+		<http:listener doc:name="/get" doc:id="e348ae46-df50-4f38-8493-288fdb29298e" config-ref="HTTP_Listener_config" path="/get"/>
 		<snowflake:select doc:name="Select" doc:id="7d0292b7-c267-49fb-bd1d-db29650df732" config-ref="Snowflake_Config">
-			<snowflake:sql ><![CDATA[select * from salesorder]]></snowflake:sql>
+			<snowflake:sql ><![CDATA[#[payload.query]]]></snowflake:sql>
+			<snowflake:input-parameters ><![CDATA[#[payload.mapping]]]></snowflake:input-parameters>
 		</snowflake:select>
+		<ee:transform doc:name="Transform Message" doc:id="50338efa-3019-49b1-ae01-56f0cbb822f1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
 	</flow>
 </mule>

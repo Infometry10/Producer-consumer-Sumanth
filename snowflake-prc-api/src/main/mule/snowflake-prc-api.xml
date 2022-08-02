@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="snowflake-prc-apiFlow" doc:id="09f41193-0af5-4edc-9976-ba3d084d4d89" >
+		<http:listener doc:name="/prc-api" doc:id="85b3d3e5-6ac9-4842-bdeb-c4c1109d040b" config-ref="HTTP_Listener_config" path="/prc-api"/>
+		<ee:transform doc:name="query and mapping" doc:id="d1ef9331-b8cc-4065-8b26-ceb79884b854" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "query": "select * from SALESORDER where NAME=:NAME",
+  "mapping": {
+    "NAME": "Z - HM Sales Order Form"
+  }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="GET" doc:name="Select " doc:id="4000cdb1-0e8c-436f-aa44-4aea6d2479e8" config-ref="Snowflake_Request_Configuration" path="/select" target="selectResponse">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"client_secret" : 1234,
+	"client_id" : 4512
+}]]]></http:headers>
+		</http:request>
+		<choice doc:name="Choice" doc:id="cff9611e-9116-486c-a643-389f3cd89169" >
+			<when expression="#[isEmpty(vars.selectResponse)]">
+				<ee:transform doc:name="query and mapping" doc:id="ef889bb0-9f5e-4bae-8bcd-2a9b23dd2c14">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "query": "Insert into SALESORDER(NAME,ENTITYNAME,TRANSACTIONID,SALESREP,EMAIL,BILLINGSTREET,BILLINGCITY,BILLINGSTATE,SHIPPINGSTREET,SHIPPINGCITY,SHIPPINGSTATE) values(:NAME,:ENTITYNAME,:TRANSACTIONID,:SALESREP ,:EMAIL,:BILLINGSTREET,:BILLINGCITY,:BILLINGSTATE,:SHIPPINGSTREET,:SHIPPINGCITY,:SHIPPINGSTATE)",
+  "mapping": {
+    "NAME": "Z - HM Sales Order Form",
+    "ENTITYNAME": "Williams Electronics and Communications",
+    "TRANSACTIONID": "SLS00000180",
+    "SALESREP": "Clark Koozer",
+    "EMAIL": "purchase@WilliamsElec.com",
+    "BILLINGSTREET": "123 Main St.",
+    "BILLINGCITY": "San Mate",
+    "BILLINGSTATE": "CA",
+    "SHIPPINGSTREET": "123 Main St.",
+    "SHIPPINGCITY": "San Mate",
+    "SHIPPINGSTATE": "CA"
+  }
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="Create" doc:id="ef64f221-c38c-4c47-8d5b-05eb1095fdf9" config-ref="Snowflake_Request_Configuration" path="/create">
+					<http:headers ><![CDATA[#[output application/java
+---
+{
+	"client_secret" : 1234,
+	"client_id" : 4512
+}]]]></http:headers>
+				</http:request>
+			</when>
+			<when expression="#[!(isEmpty(vars.selectResponse))]">
+				<ee:transform doc:name="query and mapping" doc:id="d5da150a-cde8-47aa-ae6d-de53b09adc35">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "query": "update SALESORDER set NAME=:NAME,ENTITYNAME=:ENTITYNAME,TRANSACTIONID = :TRANSACTIONID, SALESREP = :SALESREP ,EMAIL=:EMAIL,BILLINGSTREET=:BILLINGSTREET,BILLINGCITY=:BILLINGCITY,BILLINGSTATE=:BILLINGSTATE,SHIPPINGSTREET=:SHIPPINGSTREET,SHIPPINGCITY=:SHIPPINGCITY,SHIPPINGSTATE=:SHIPPINGSTATE",
+  "mapping": {
+    "NAME": "Z - HM Sales Order Form",
+    "ENTITYNAME": "Williams Electronics and Communications",
+    "TRANSACTIONID": "SLS00000180",
+    "SALESREP": "Clark Koozer",
+    "EMAIL": "purchase@WilliamsElec.com",
+    "BILLINGSTREET": "123 Main St.",
+    "BILLINGCITY": "San Mate",
+    "BILLINGSTATE": "CA",
+    "SHIPPINGSTREET": "123 Main St.",
+    "SHIPPINGCITY": "San Mate",
+    "SHIPPINGSTATE": "CA"
+  }
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="Update" doc:id="1c91edcf-da1e-4db7-834a-e807ccdea514" config-ref="Snowflake_Request_Configuration" path="update">
+					<http:headers ><![CDATA[#[output application/java
+---
+{
+	"client_secret" : 1234,
+	"client_id" : 4512
+}]]]></http:headers>
+				</http:request>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="payload" doc:id="6470dadb-4a9c-496d-a739-eeba235aa895" message="#[payload]"/>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>
